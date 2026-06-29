@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DB 커넥션 테스트</title>
+</head>
+<body>
+<h2>DB 커넥션 풀 테스트</h2>
+
+<button onclick="sendRequests('normal', 10)">정상 요청 10개</button>
+<button onclick="sendRequests('slow', 10)">느린 쿼리 10개</button>
+<button onclick="sendRequests('leak', 10)">커넥션 누수 10개</button>
+<button onclick="clearLog()">초기화</button>
+
+<div id="log" style="margin-top:20px; font-family:monospace;"></div>
+
+<script>
+    function sendRequests(type, count) {
+        for (let i = 1; i <= count; i++) {
+            const start = Date.now();
+            const div = document.createElement('div');
+            div.textContent = `[요청 ${i}] ${type} 전송 중...`;
+            document.getElementById('log').appendChild(div);
+
+            fetch(`/jboss-leak-test-0.0.1-SNAPSHOT/db/${type}`)
+                .then(res => res.text())
+                .then(text => {
+                    const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+                    div.textContent = `[요청 ${i}] ✅ ${text} (${elapsed}s)`;
+                    div.style.color = 'green';
+                })
+                .catch(err => {
+                    const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+                    div.textContent = `[요청 ${i}] ❌ 실패 (${elapsed}s)`;
+                    div.style.color = 'red';
+                });
+        }
+    }
+
+    function clearLog() {
+        document.getElementById('log').innerHTML = '';
+    }
+</script>
+</body>
+</html>
