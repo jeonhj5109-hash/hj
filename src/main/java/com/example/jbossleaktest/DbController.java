@@ -36,4 +36,10 @@ public class DbController {
         // close() 없음 → 누수 발생
         return "커넥션 누수 발생";
     }
+
+    @GetMapping("/db/lock")
+    public String lock() throws Exception {
+        jdbcTemplate.update("UPDATE lock_test SET val='was_locked' WHERE id=1");
+        return "락 획득 성공";
+    }
 }
