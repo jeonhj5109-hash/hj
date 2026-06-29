@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 public class DbController {
@@ -46,4 +48,19 @@ public class DbController {
         jdbcTemplate.update("UPDATE lock_test SET val='was_locked' WHERE id=1");
         return "락 획득 성공";
     }
+
+    // 메모리 압박 (GC 유발)
+    @GetMapping("/db/gc")
+    public String gc() throws Exception {
+        List<byte[]> list = new ArrayList<>();
+        try {
+            while (true) {
+                list.add(new byte[1024 * 1024]); // 1MB씩 계속 할당
+                Thread.sleep(100);
+            }
+        } catch (OutOfMemoryError e) {
+            return "OOM 발생: " + e.getMessage();
+        }
+    }
+
 }
