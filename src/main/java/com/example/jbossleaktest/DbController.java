@@ -32,9 +32,13 @@ public class DbController {
 
     @GetMapping("/db/leak")
     public String leak() throws Exception {
-        java.sql.Connection conn = dataSource.getConnection();
-        // close() 없음 → 누수 발생
-        return "커넥션 누수 발생";
+        // JBoss 트랜잭션 밖에서 커넥션 가져오기
+        javax.sql.DataSource unwrapped = jdbcTemplate.getDataSource();
+        java.sql.Connection conn = unwrapped.getConnection();
+        conn.setAutoCommit(false);
+        // close() 없음 → 진짜 누수
+        Thread.sleep(300000); // 5분 대기 (커넥션 점유)
+        return "누수 발생";
     }
 
     @GetMapping("/db/lock")
