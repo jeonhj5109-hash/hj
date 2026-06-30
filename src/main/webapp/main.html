@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>세션 모니터링</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'맑은 고딕',sans-serif; background:#f5f6f8; font-size:13px; }
+
+        .layout { display:flex; min-height:100vh; }
+
+        .sidebar { width:200px; background:#fff; border-right:1px solid #ddd; }
+        .sidebar .logo { background:#1a3c6e; color:#fff; padding:14px 16px; font-size:14px; font-weight:bold; }
+        .sidebar .menu-item { padding:9px 16px; color:#888; font-weight:bold; font-size:12px; }
+        .sidebar .submenu { padding:6px 0 6px 28px; color:#555; cursor:pointer; }
+        .sidebar .submenu.active { font-weight:bold; color:#1a3c6e; }
+        .sidebar .menu-active-group { background:#eef2f8; border-left:3px solid #1a3c6e; }
+        .sidebar .menu-active-group .menu-item { color:#1a3c6e; padding-left:13px; }
+
+        .main { flex:1; display:flex; flex-direction:column; }
+
+        .topbar { display:flex; justify-content:space-between; align-items:center; padding:10px 20px; border-bottom:1px solid #ddd; background:#fff; font-size:12px; color:#666; }
+        .topbar button { font-size:11px; padding:4px 10px; border:1px solid #ccc; background:#fff; cursor:pointer; }
+
+        .content { padding:20px; }
+        .section-title { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+        .section-title .bar { width:4px; height:16px; background:#1a3c6e; }
+        .section-title span { font-size:15px; font-weight:bold; color:#222; }
+
+        .info-table { width:100%; border-collapse:collapse; border:1px solid #ddd; margin-bottom:24px; }
+        .info-table td { padding:9px 14px; border-bottom:1px solid #ddd; border-right:1px solid #ddd; }
+        .info-table td.label { width:140px; background:#f4f6fa; color:#666; }
+        .info-table tr:last-child td { border-bottom:none; }
+
+        .btn-row { display:flex; gap:8px; margin-bottom:14px; }
+        .btn-row button { font-size:12px; padding:8px 16px; border:1px solid #1a3c6e; background:#fff; color:#1a3c6e; cursor:pointer; }
+        .btn-row button:hover { background:#1a3c6e; color:#fff; }
+
+        .result-table { width:100%; border-collapse:collapse; border:1px solid #ddd; }
+        .result-table th { background:#1a3c6e; color:#fff; padding:8px 12px; text-align:left; font-size:12px; border-right:1px solid rgba(255,255,255,0.2); }
+        .result-table td { padding:8px 12px; border-bottom:1px solid #ddd; border-right:1px solid #ddd; }
+        .result-table tr:last-child td { border-bottom:none; }
+        .ok { color:#1a7a3c; }
+        .fail { color:#c0392b; }
+        .mono { font-family:monospace; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+
+    <div class="sidebar">
+        <div class="logo">🔒 업무포털시스템</div>
+        <div class="menu-item">전자결재</div>
+        <div class="menu-item">일정관리</div>
+        <div class="menu-active-group">
+            <div class="menu-item">시스템 관리</div>
+        </div>
+        <div class="submenu">사용자 관리</div>
+        <div class="submenu active">세션 모니터링</div>
+        <div class="submenu">접속 이력</div>
+        <div class="menu-item">공지사항</div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <span id="breadcrumb">홈 &gt; 시스템 관리 &gt; 세션 모니터링</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span id="welcomeMsg">조회 중...</span>
+                <button onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="section-title"><div class="bar"></div><span>WAS 세션 클러스터링 검증</span></div>
+            <table class="info-table" id="sessionInfoTable">
+                <tr><td class="label">상태</td><td>확인 중...</td></tr>
+            </table>
+
+            <div class="section-title"><div class="bar"></div><span>노드별 세션 복제 확인</span></div>
+            <div class="btn-row">
+                <button onclick="checkNode(8080)">prodO (8080) 조회</button>
+                <button onclick="checkNode(8180)">prodO2 (8180) 조회</button>
+                <button onclick="checkNode(8280)">prodO3 (8280) 조회</button>
+            </div>
+
+            <table class="result-table">
+                <tr>
+                    <th>노드</th><th>상태</th><th>Session ID</th><th>확인 시각</th>
+                </tr>
+                <tbody id="resultBody">
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function loadSession() {
+        fetch('/jboss-leak-test-0.0.1-SNAPSHOT/api/session-info')
+            .then(res => res.json())
+            .then(data => {
+                const table = document.getElementById('sessionInfoTable');
+                if (data.loggedIn) {
+                    table.innerHTML = `
+                    <tr><td class="label">현재 처리 노드</td><td>${data.node}</td></tr>
+                    <tr><td class="label">Session ID</td><td class="mono">${data.sessionId}</td></tr>
+                    <tr><td class="label">로그인 사용자</td><td>${data.userId} (${data.userName})</td></tr>
+                `;
+                    document.getElementById('welcomeMsg').textContent = `${data.userId} 사원님 환영합니다`;
+                } else {
+                    table.innerHTML = `<tr><td class="label">상태</td><td class="fail">${data.message}</td></tr>`;
+                    setTimeout(() => location.href = 'login.html', 1500);
+                }
+            });
+    }
+
+    function checkNode(port) {
+        const url = `http://${location.hostname}:${port}/jboss-leak-test-0.0.1-SNAPSHOT/api/session-info`;
+        fetch(url, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                const tr = document.createElement('tr');
+                const now = new Date().toLocaleTimeString('ko-KR', { hour12:false });
+                if (data.loggedIn) {
+                    tr.innerHTML = `
+                    <td>${data.node}</td>
+                    <td class="ok">✓ 복제 성공</td>
+                    <td class="mono">${data.sessionId}</td>
+                    <td>${now}</td>
+                `;
+                } else {
+                    tr.innerHTML = `
+                    <td>${data.node}</td>
+                    <td class="fail">✗ 복제 실패</td>
+                    <td>-</td>
+                    <td>${now}</td>
+                `;
+                }
+                document.getElementById('resultBody').prepend(tr);
+            })
+            .catch(() => {
+                const tr = document.createElement('tr');
+                const now = new Date().toLocaleTimeString('ko-KR', { hour12:false });
+                tr.innerHTML = `<td>포트 ${port}</td><td class="fail">✗ 응답 없음</td><td>-</td><td>${now}</td>`;
+                document.getElementById('resultBody').prepend(tr);
+            });
+    }
+
+    function logout() {
+        fetch('/jboss-leak-test-0.0.1-SNAPSHOT/api/logout', { method: 'POST' })
+            .then(() => location.href = 'login.html');
+    }
+
+    loadSession();
+</script>
+</body>
+</html>
