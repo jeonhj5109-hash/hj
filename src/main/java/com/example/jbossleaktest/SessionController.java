@@ -43,15 +43,16 @@ public class SessionController {
         return result;
     }
 
-    @PostMapping("/api/logout")
-    public Map<String, Object> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) session.invalidate();
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("node", nodeInfo());
-        return result;
-    }
+	@PostMapping("/api/logout")
+	public Map<String, Object> logout(HttpServletRequest request) throws Exception {
+	    HttpSession session = request.getSession(false);
+	    if (session != null) session.invalidate();
+    	Map<String, Object> result = new HashMap<>();
+    	result.put("success", true);
+    	result.put("node", nodeInfo());
+    	return result;
+	}
+
 
     private String nodeInfo() throws Exception {
         InetAddress addr = InetAddress.getLocalHost();
